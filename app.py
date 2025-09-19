@@ -6,17 +6,17 @@ import nltk
 from nltk.stem.porter import PorterStemmer
 
 # Ensure required NLTK data is available on first run (e.g., Streamlit Cloud)
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt', quiet=True)
+for resource, path in [
+    ("punkt", "tokenizers/punkt"),
+    ("punkt_tab", "tokenizers/punkt_tab"),
+    ("stopwords", "corpora/stopwords"),
+]:
+    try:
+        nltk.data.find(path)
+    except LookupError:
+        nltk.download(resource, quiet=True)
 
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords', quiet=True)
-
-ps=PorterStemmer()
+ps = PorterStemmer()
 
 def transform_text(text):
     text = text.lower()
@@ -42,31 +42,27 @@ def transform_text(text):
 
     return " ".join(y)
 
-tfidf=pickle.load(open('vectorizer.pkl', 'rb'))
-model=pickle.load(open('modle.pkl', 'rb'))
+# Load vectorizer and model
+tfidf = pickle.load(open('vectorizer.pkl', 'rb'))
+model = pickle.load(open('modle.pkl', 'rb'))  # keep your filename spelling
 
-st.title(' SMS/Email Spam Classification')
+st.title('📩 SMS/Email Spam Classification')
 
+# Input box
 input_sms = st.text_area('Enter your message')
 
 if st.button('Classify'):
+    # 1. Preprocess
+    transformed_sms = transform_text(input_sms)
 
+    # 2. Vectorize
+    vector_input = tfidf.transform([transformed_sms])
 
-    #1.preprocess
-    transformed_sms=transform_text(input_sms)
+    # 3. Predict
+    result = model.predict(vector_input)
 
-    #2.vectorize
-    vector_input=tfidf.transform([transformed_sms])
-
-    #3.predict
-    result=model.predict(vector_input)
-
-    #4.display
+    # 4. Display
     if result == 1:
-        st.header('Your Message is a spam message')
+        st.header('🚨 Your Message is a **Spam** message')
     else:
-        st.header('Your Message is not a spam message')
-
-
-
-
+        st.header('✅ Your Message is **Not Spam**')
